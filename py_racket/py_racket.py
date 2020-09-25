@@ -31,6 +31,7 @@ class ASTNode:
             ** self.default_constants,
             ** self.defualt_definitions,
             ** self.defualt_conditionals,
+            ** self.defualt_list,
         }
 
     @property
@@ -45,6 +46,10 @@ class ASTNode:
             'sqrt': SquareRoot,
             'modulo': Modulo,
             'floor': Floor,
+            'empty?': IsEmpty,
+            'empty': Empty,
+            'min': Min,
+            'max': Max,
         }
 
     @property
@@ -77,6 +82,15 @@ class ASTNode:
             'cond': Conditional,
             'or': OrConditional,
             'and': AndConditional,
+            'check-expect': CheckExpect,
+        }
+
+    @property
+    def defualt_list(self) -> dict:
+        return {
+            'cons': Consecutive,
+            'first': First,
+            'rest': Rest,
         }
 
     def parse_single_length(self, node_name) -> ASTNode:
@@ -164,7 +178,6 @@ class ASTNode:
             node = self.parse_single_length(parsed_arguments[0])
         else:
             node = namespace[parsed_arguments[0]](' '.join(parsed_arguments[1:]))
-
         return node.evaluate(namespace)
 
 
@@ -290,7 +303,10 @@ class Definition(ASTNode):
 class Variable(ASTNode):
     def evaluate(self, namespace):
         name = self.parse_arguments(self.cleaned_str)[0]
-        return namespace[name]
+        if inspect.isclass(namespace[name]):
+            return namespace[name](namespace).evaluate(namespace)
+        else:
+            return namespace[name]
 
 
 class Float(ASTNode):
@@ -361,6 +377,18 @@ class SquareRoot(ArithmeticNode):
         return items[0] ** (1/2)
 
 
+class Min(ArithmeticNode):
+    def evaluate(self, namespace):
+        items = self._eval_items(namespace)
+        return min(items)
+
+
+class Max(ArithmeticNode):
+    def evaluate(self, namespace):
+        items = self._eval_items(namespace)
+        return max(items)
+
+
 class BooleanNode(ASTNode):
     def _eval_items(self, namespace):
         return [ASTNode(x).evaluate(namespace) for x in self.parse_arguments(self.cleaned_str)]
@@ -394,3 +422,48 @@ class LessThanEquals(BooleanNode):
     def evaluate(self, namespace):
         items = self._eval_items(namespace)
         return items[0] <= items[1]
+
+
+class CheckExpect(BooleanNode):
+    def evaluate(self, namespace):
+        items = self._eval_items(namespace)
+        if items[0] == items[1]:
+            print('TEST PASSED!')
+        else:
+            print(f'TEST FAILED: {items[0]} != {items[0]}')
+
+
+class ListNodes(ASTNode):
+    def _eval_items(self, namespace):
+        return [ASTNode(x).evaluate(namespace) for x in self.parse_arguments(self.cleaned_str)]
+
+
+class First(ListNodes):
+    def evaluate(self, namespace):
+        items = self._eval_items(namespace)
+        return items[0][0]
+
+
+class Rest(ListNodes):
+    def evaluate(self, namespace):
+        items = self._eval_items(namespace)
+        return items[0][1]
+
+
+class Consecutive(ListNodes):
+    def evaluate(self, namespace):
+        items = self._eval_items(namespace)
+        return [items[0], items[1]]
+
+
+class Empty(ListNodes):
+    def evaluate(self, namespace):
+        return None
+
+
+class IsEmpty(ListNodes):
+    def evaluate(self, namespace):
+        items = self._eval_items(namespace)
+        return items[0] is None
+
+
