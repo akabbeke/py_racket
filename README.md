@@ -1,5 +1,14 @@
 # py_racket
-A python implementation of the Racket language
+This is an incomplete python implementation of the Racket language. It currently supports:
+* Aritmetic functions
+* Boolean logic
+* Conditional statements
+* Function definition
+* `cons`, `first` and `rest`
+* Empty
+* `check-except`
+
+I'm currently in the UW CS135 course for functional programming. I'm updating this project with more language features as the course progresses.
 
 # Example
 ```python
